@@ -1,12 +1,12 @@
-<img align="left" src="https://img.shields.io/badge/Author-s1l3nt78-blueviolet"><a href="https://www.codefactor.io/repository/github/s1l3nt78/mkcheck"><img align="right" src="https://www.codefactor.io/repository/github/s1l3nt78/mkcheck/badge" alt="CodeFactor" /></a><br/>
+<img align="left" src="https://img.shields.io/badge/Author-s1l3nt78-blueviolet"><a href="https://www.codefactor.io/repository/github/whiterabb17/mkcheck"><img align="right" src="https://www.codefactor.io/repository/github/whiterabb17/mkcheck/badge" alt="CodeFactor" /></a><br/>
 <p align="center"><img align="center" src="https://img.shields.io/badge/-The_Dead_Bunny_Collective-green"></p>
 <br />
 <p align="center">
  <img align="center" src="https://raw.githubusercontent.com/s1l3nt78/MkCheck/master/docs/logo.png" />
 <br />
- <img align="center" src="https://img.shields.io/github/issues/s1l3nt78/MkCheck" />
- <img align="center" src="https://img.shields.io/github/forks/s1l3nt78/MkCheck" />
- <img align="center" src="https://img.shields.io/github/stars/s1l3nt78/MkCheck" />
+ <img align="center" src="https://img.shields.io/github/issues/whiterabb17/MkCheck" />
+ <img align="center" src="https://img.shields.io/github/forks/whiterabb17/MkCheck" />
+ <img align="center" src="https://img.shields.io/github/stars/whiterabb17/MkCheck" />
  <br />
  <img align="center" src="https://img.shields.io/badge/Codename-BlueChimney-orange" />
  <img align="center" src="https://img.shields.io/badge/Version-4-red" />
@@ -27,6 +27,8 @@
 - ChimneyBlue SMB BufferOverflow Exploit (x86/mips)
 - RouterOS Jailbreak support for Mikrotik versions 2 - 6.44.3
 
+# Moved repo location (s1lnt78 -> whiterabb17)
+
 # *IMPORTANT*
 
  This software should not be used within any system or
@@ -38,10 +40,10 @@
 # Installation
 
 	# Oneliner Deb package install:
-	$ wget https://github.com/s1l3nt78/MkCheck/releases/download/v4/MkCheck_4.deb; sudo dpkg -i MkCheck_4.deb; mthread
+	$ wget https://github.com/whiterabb17/MkCheck/releases/download/v4/MkCheck_4.deb; sudo dpkg -i MkCheck_4.deb; mthread
 
 	# Git install:
-	$ git clone https://github.com/s1l3nt78/MkCheck
+	$ git clone https://github.com/whiterabb17/MkCheck
 	$ cd MkCheck
 	$ sudo bash setup.sh
 
@@ -53,7 +55,7 @@
  <br>
 To setup up Root Nethunter on a non-rooted android, just follow
 <br>
-instructions from <a href="https://github.com/s1l3nt78/MkCheck/wiki/Installing-Nethunter-to-run-root-(without-rooted-device)">here</a>.
+instructions from <a href="https://github.com/whiterabb17/MkCheck/wiki/Installing-Nethunter-to-run-root-(without-rooted-device)">here</a>.
 
 # Demo
 
@@ -149,19 +151,19 @@ instructions from <a href="https://github.com/s1l3nt78/MkCheck/wiki/Installing-N
 <h2>Images:</h2>
 <p>
 	<a><strong>Main Menu</strong></a><br />
-<img align="center" src="https://raw.githubusercontent.com/s1l3nt78/MkCheck/master/docs/main.png">
+<img align="center" src="https://raw.githubusercontent.com/whiterabb17/MkCheck/master/docs/main.png">
  <br />
  <br />
 	<a><strong>MikroTik Auto-Exploiter</strong></a><br />
-<img align="center" src="https://raw.githubusercontent.com/s1l3nt78/MkCheck/master/docs/mcheck.png">
+<img align="center" src="https://raw.githubusercontent.com/whiterabb17/MkCheck/master/docs/mcheck.png">
 <br />
  <br />
 	<a><strong>WinBox Authentication Bypass</strong></a><br />
-<img align="center" src="https://raw.githubusercontent.com/s1l3nt78/MkCheck/master/docs/rsf.png">
+<img align="center" src="https://raw.githubusercontent.com/whiterabb17/MkCheck/master/docs/rsf.png">
 <br />
 <br />
 	<a><strong>Mthread Using Windows (MikroTik Auto-Exploitation)</strong></a><br />
-<img align="center" src="https://raw.githubusercontent.com/s1l3nt78/MkCheck/master/docs/winX.png">
+<img align="center" src="https://raw.githubusercontent.com/whiterabb17/MkCheck/master/docs/winX.png">
 </p>
 
 
