@@ -2,7 +2,7 @@
 <p align="center"><img align="center" src="https://img.shields.io/badge/-The_Dead_Bunny_Collective-green"></p>
 <br />
 <p align="center">
- <img align="center" src="https://raw.githubusercontent.com/s1l3nt78/MkCheck/master/docs/logo.png" />
+ <img align="center" src="https://raw.githubusercontent.com/whiterabb17/MkCheck/master/docs/logo.png" />
 <br />
  <img align="center" src="https://img.shields.io/github/issues/whiterabb17/MkCheck" />
  <img align="center" src="https://img.shields.io/github/forks/whiterabb17/MkCheck" />
