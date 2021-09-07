@@ -1,0 +1,19 @@
+
+.vs/CMake Overview
+.vs/MkCheck/v16/.suo
+*.db
+*.json
+*.sqlite
+*.xml
+*.iml
+.vs/MkCheck/v16/Browse.VC.db-shm
+.vs/MkCheck/v16/Browse.VC.db-wal
+.vs/MkCheck/v16/Browse.VC.opendb
+*.cmake
+*.bin
+*.exe
+*.c
+*.obj
+*.check_cache
+*.log
+scripts/clear.2.py

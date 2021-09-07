@@ -1,0 +1,89 @@
+version: 2
+jobs:
+  build:
+    branches:
+      only:
+        - circleci-project-setup
+      ignore:
+        - master
+
+    machine:
+      image: ubuntu-1604:201903-01
+
+
+    steps:
+      # Restore Python Packages (Cached)
+#       - restore_cache:
+#           key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+#           key2: deps2-{{ .Branch }}-{{ checksum "requirements-dev.txt" }}
+     
+     # Kali Repo List Install & Signing
+      - run: 
+          name: Install & Sign Kali Repos
+          command: |
+            sudo sh -c "echo 'deb https://http.kali.org/kali kali-rolling main non-free contrib' > /etc/apt/sources.list.d/kali.list"
+            sudo apt install gnupg                                                                                    # Install Kali Repo list
+            wget 'https://archive.kali.org/archive-key.asc'                                                           # Aquire Kali Repo Key Signature
+            sudo apt-key add archive-key.asc                                                                          # Add Kali Signing Key to Machine Image 
+    
+    # Removal of Google-Chrome & Heroku Repos (Causes Build Error [Invalid Repo])
+      - run: 
+          name: Remove Unnecessary Repos
+          command: | 
+            sudo rm /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/heroku.list                    # Remove Faulty Repo lists (breaking CircleCI Build)
+  
+    # Apt System List Update
+      - run: 
+          name: Apt Repository List Update
+          command: sudo apt update                                                                                          # Check Repo Status
+      
+    # AutoRestart Services Upon Update
+      - run: 
+          name: AutoRestart Updated System Services
+          command: echo '* libraries/restart-without-asking boolean true' | sudo debconf-set-selections                     # Set Services to Restart Automatically
+      
+    # Apt Package Updates
+      - run:                                                                                                                # Check for Package Updates
+          name: Apt System Package Update
+          command: sudo apt-get update
+          
+    # CMake/Python3 (Pip3, Setuptools, Wheel) Install
+      - run:                                                                                         
+           name: Python3/CMake Setup 
+           command: |
+              sudo apt-get install python3.8 python3-pip cmake  
+              sudo apt --fix-broken install
+              
+    # Link Python3.8 as Main Python3 interpreter
+      - run:
+          name: Python Version Linkage
+          command: |
+            ls /usr/bin/python
+            sudo update-alternatives --install /usr/bin/python3 python3.8 /usr/bin/python3.8 1                        # Make Python3.8 the main 'Python3' interpreter
+      # Python2 Install
+      - run: 
+          name: Python2 (Pip upgrade, Setuptools & Wheel install)
+          command: |
+            sudo pip2 install --upgrade pip 
+            pip2 install --upgrade pip 
+            sudo pip2 install setuptools wheel
+      # Download & Run MkCheck Setup (CircleCI Build Branch ONLY)
+      - run: 
+          name: Download & Run MkCheck Setup (CircleCI Build Branch ONLY)
+          command: |
+            sudo git clone -b circleci-project-setup https://github.com/s1l3nt78/MkCheck.git /opt/MkCheck
+            cd /opt/MkCheck
+            sudo bash setup.sh
+     
+      # Run MkCheck
+      #- run:
+      #    name: MkCheck (Runtime - Install Check)
+      #    command: |
+      #      bash /opt/MkCheck/mkcheck
+      
+      # Cache RouterSploit Python Packages 
+      #- save_cache:
+#           key: deps1-{{ .Branch }}-{{ checksum "/root/routersploit/requirements.txt" }}
+#           key2: deps2-{{ .Branch }}-{{ checksum "/root/routersploit/requirements-dev.txt" }}
+#           paths:
+#             - "/home/circleci/.cache/pip"
