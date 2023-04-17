@@ -1,4 +1,5 @@
 #!/bin/bash
+
 LPATH='/opt/MkCheck/'
 ORNG='\033[0;33m'
 NC='\033[0m'
