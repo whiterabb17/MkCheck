@@ -46,6 +46,8 @@ fi
 cd /tmp
 wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
 python2 /tmp/get-pip.py
+sudo python2 /tmp/get-pip.py
+sudo python2 -m pip install paramiko
 cd /opt
 #wget http://ftp.us.debian.org/debian/pool/main/p/python-pip/python-pip_18.1-5_all.deb
 #wget http://ftp.us.debian.org/debian/pool/main/p/python-pip/python-pip-whl_18.1-5_all.deb
