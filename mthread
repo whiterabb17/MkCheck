@@ -759,7 +759,7 @@ bytheway(){
 # WinBox Auth Bypass #
 ######################
 authbox(){
-	for name in `cat /opt/MkCheck/files/rsf.txt`
+	for name in `cat /opt/MkCheck/files/tiks_rsf.txt`
 		do
 			echo -e "${RED}Running WinBox Exploit on ${name}${NC}"
 			WB=$(sudo python3 winbox.py ${name})
