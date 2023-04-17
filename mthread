@@ -225,7 +225,7 @@ fresh(){
 	cp files/tiks.txt files/tiks_rsf.txt
 
 	########################################################
-    ##############################
+    	##############################
 	#  RSF Session Folder Check  #
 	##############################
 
@@ -773,7 +773,7 @@ authbox(){
 ####################
 # Jail Break Check #
 jailer(){
-	for name in `cat /opt/MkCheck/files/rsf.txt`
+	for name in `cat /opt/MkCheck/files/tiks_rsf.txt`
 		do
 			JAIL=$(sudo python3 rsf.py -m exploits/routers/mikrotik/routeros_jailbreak -s "target ${name}")
 			echo "${JAIL}" >> /opt/MkCheck/results/RSF/${SESSION}/Jail.${name}
