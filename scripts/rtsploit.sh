@@ -4,8 +4,16 @@
 ######################
 # WinBox Auth Bypass #
 ######################
+str=$(pwd)
+substr="MkCheck"
+if [[ $str != *"$substr"* ]]; then
+    if [[ -d '/opt/MkCheck' ]]; then
+    	cd /opt/MkCheck
+    fi
+fi
+
 authbox(){
-	for name in `cat /opt/MkCheck/files/rsf.txt`
+	for name in `cat /opt/MkCheck/files/tiks_rsf.txt`
 		do
 			WB=$(sudo python3 winbox.py ${name})
 			echo "${WB}" >> /opt/MkCheck/results/RSF/${SESSION}/WinBox.${name}
@@ -17,7 +25,7 @@ authbox(){
 ####################
 # Jail Break Check #
 jailer(){
-	for name in `cat /opt/MkCheck/files/rsf.txt`
+	for name in `cat /opt/MkCheck/files/tiks_rsf.txt`
 		do
 			JAIL=$(sudo python3 rsf.py -m exploits/routers/mikrotik/routeros_jailbreak -s "target ${name}")
 			echo "${JAIL}" >> /opt/MkCheck/results/RSF/${SESSION}/Jail.${name}
