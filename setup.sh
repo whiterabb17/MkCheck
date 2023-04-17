@@ -43,9 +43,10 @@ fi
 
 # Python2 Dependancies
 #apt-get remove python3-pip -y
-cd /opt/
-wget https://bootstrap.pypa.io/pip/2.7/get-pip.py /tmp/get-pip2.py
-python2 /tmp/get-pip2.py
+cd /tmp
+wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+python2 /tmp/get-pip.py
+cd /opt
 #wget http://ftp.us.debian.org/debian/pool/main/p/python-pip/python-pip_18.1-5_all.deb
 #wget http://ftp.us.debian.org/debian/pool/main/p/python-pip/python-pip-whl_18.1-5_all.deb
 #dpkg -i python-pip-whl_18.1-5_all.deb
